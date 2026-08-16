@@ -16,10 +16,8 @@ struct PosterView: View {
     
     @State private var show_settings: Bool = false
     @State private var show_importer: Bool = false
+    @State private var show_explorer: Bool = false
     @State private var busy = false
-    
-    @State private var show_browser: Bool = false
-    @State private var browser_url = URL(string: "https://cowabun.ga/wallpapers")!
 
     var body: some View {
         NavigationStack {
@@ -38,12 +36,14 @@ struct PosterView: View {
                     }
                     .disabled(state.poster_files.isEmpty || busy)
 
-                    Button {
-                        reset()
-                    } label: {
-                        Text("Reset")
+                    if false {
+                        Button {
+                            reset()
+                        } label: {
+                            Text("Reset")
+                        }
+                        .disabled(busy)
                     }
-                    .disabled(busy)
                 }
                 
                 Section {
@@ -53,16 +53,15 @@ struct PosterView: View {
                         Text("Import Tendies")
                     }
                     .disabled(busy)
+                    
+                    Button {
+                        show_explorer = true
+                    } label: {
+                        Text("Explore Tendies")
+                    }
+                    .disabled(busy)
                 } footer: {
-                    Text("Pick one or more .tendies (or .zip) wallpaper packs.\nGet .tendies [here](https://cowabun.ga/wallpapers).")
-                        .environment(\.openURL, OpenURLAction { url in
-                            browser_url = url
-                            show_browser = true
-                            return .handled
-                        })
-                        .sheet(isPresented: $show_browser) {
-                            SafariView(url: browser_url)
-                        }
+                    Text("Import up to 5 wallpaper packs.\n**NOTE:** Importing more than 5 tendies at once is not a good idea and importing more than 15 is a TERRIBLE idea. Dont say I didnt warn you.")
                 }
 
                 if !state.poster_files.isEmpty {
@@ -93,11 +92,13 @@ struct PosterView: View {
             .sheet(isPresented: $show_settings) {
                 SettingsView()
             }
+            .sheet(isPresented: $show_explorer) {
+                TendiesView()
+            }
             .fileImporter(isPresented: $show_importer, allowedContentTypes: [.data], allowsMultipleSelection: true) { result in
                 switch result {
                 case .success(let urls):
                     urls.forEach { state.append_poster_file($0) }
-                    show_browser = false
                 case .failure(let error):
                     print("(pb) import failed: \(error)")
                 }
@@ -113,10 +114,14 @@ struct PosterView: View {
             busy = false
             Alertinator.shared.alert(
                 title: "Successfully applied PosterBoard!",
-                body: "Respring your device for changes to take effect.",
-                actionLabel: "Respring",
+                body: "For changes to take effect:\n1. Click 'Open' to launch Posterboard\n2. Close it from the App Switcher",
+                actionLabel: "Open",
                 action: {
-                    state.respring()
+                    // state.respring()
+                    
+                    let cls = objc_getClass("LSApplicationWorkspace") as? NSObject
+                    let ws = cls?.perform(Selector(("defaultWorkspace"))).takeUnretainedValue()
+                    _ = ws?.perform(Selector(("openApplicationWithBundleID:")), with: "com.apple.PosterBoard")
                 }
             )
         } catch {

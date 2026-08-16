@@ -29,29 +29,49 @@ struct ContentView: View {
                     NavigationLink {
                         GestaltView()
                     } label: {
-                        Text("MobileGestalt")
+                        HStack {
+                            Text("MobileGestalt")
+                            if state.granting_mg {
+                                Spacer()
+                                ProgressView()
+                                    .tint(Color.primary)
+                            }
+                        }
                     }
+                    .disabled(state.mg_granted != true)
                     
                     NavigationLink {
                         PosterView()
                     } label: {
-                        Text("PosterBoard")
+                        HStack {
+                            Text("PosterBoard")
+                            if state.granting_pb {
+                                Spacer()
+                                ProgressView()
+                                    .tint(Color.primary)
+                            }
+                        }
                     }
-                    .disabled(method == "cmg")
+                    .disabled(method == "cmg" || state.pb_granted != true)
                     
                     NavigationLink {
                         SantanderView()
                     } label: {
-                        Text("HouseArrest")
+                        HStack {
+                            Text("HouseArrest")
+                            if state.granting_apps {
+                                Spacer()
+                                ProgressView()
+                                    .tint(Color.primary)
+                            }
+                        }
                     }
-                    .disabled(true)
+                    .disabled(method == "cmg" || state.apps_granted != true)
                 } header: {
                     Label("Tweaks", systemImage: "paintbrush")
                 } footer: {
                     if method == "cmg" {
-                         Text("Only MobileGestalt is available when method is set to cmg.\nHouseArrest is still in development and may not work as expected.")
-                    } else {
-                        Text("HouseArrest is still in development and may not work as expected.")
+                         Text("Only MobileGestalt is available when method is set to cmg.")
                     }
                 }
             }

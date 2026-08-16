@@ -15,6 +15,7 @@ struct SettingsView: View {
     @AppStorage("method") private var method: String = "bad_query"
     @AppStorage("ka_on") private var ka_on = true
     @AppStorage("token") private var token: String = ""
+    @AppStorage("dismiss_after_import") private var dismiss_after_import = false
     
     @State private var show_confirm: Bool = false
     
@@ -81,7 +82,7 @@ struct SettingsView: View {
                 } header: {
                     Label("Exploit", systemImage: "wrench.and.screwdriver")
                 } footer: {
-                    Text(method == "cmg" ? "**CMG:** Supports iOS 27.0 b1 - b4. PosterBoard wont work with this method. Only use this when bad_query isnt working for you." : "**bad_query:** Supports iOS 27.0 b1 - b4. By [forcequit](https://github.com/forcequitOS).")
+                    Text(method == "cmg" ? "**CMG:** Supports iOS 27.0 b1 - b4. Only MobileGestalt will work with this method. Only use this when bad_query isnt working for you." : "**bad_query:** Supports iOS 27.0 b1 - b4. By [forcequit](https://github.com/forcequitOS).")
                 }
                 
                 Section {
@@ -131,7 +132,7 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    Toggle("Keep Alive", isOn: $ka_on)
+                    PlainToggle(text: "Keep Alive", infoType: .info, infoMessage: "Keeps the app running in the background after you close it, allowing it to remain active.", isOn: $ka_on)
                         .onChange(of: ka_on) { _, enabled in
                             if enabled {
                                 keep_alive()
@@ -139,6 +140,8 @@ struct SettingsView: View {
                                 let_die()
                             }
                         }
+
+                    PlainToggle(text: "Dismiss after importing", infoType: .info, infoMessage: "When enabled, the Tendies explorer will close automatically after importing a .tendies file into PosterBoard.", isOn: $dismiss_after_import)
                 } header: {
                     Label("Settings", systemImage: "gear")
                 }
@@ -160,6 +163,7 @@ struct SettingsView: View {
                     CreditsRow(name: "forcequit", role: "The bad_query exploit", profile: URL(string: "https://github.com/forcequitOS")!)
                     CreditsRow(name: "johnny", role: "His work on the MCM bug class", profile: URL(string: "https://github.com/0xjohnnydev")!)
                     CreditsRow(name: "jailbreak.party", role: "PartyUI, GestaltView", profile: URL(string: "https://github.com/jailbreakdotparty")!)
+                    CreditsRow(name: "SerStars", role: "Tendies repository", profile: URL(string: "https://github.com/SerStars")!)
                 } header: {
                     Label("Credits", systemImage: "person.3.fill")
                 }
