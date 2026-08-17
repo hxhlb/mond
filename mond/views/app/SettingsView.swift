@@ -16,6 +16,7 @@ struct SettingsView: View {
     @AppStorage("ka_on") private var ka_on = true
     @AppStorage("token") private var token: String = ""
     @AppStorage("dismiss_after_import") private var dismiss_after_import = false
+    @AppStorage("atomic_write") private var atomic_write = true
     
     @State private var show_confirm: Bool = false
     
@@ -142,6 +143,8 @@ struct SettingsView: View {
                         }
 
                     PlainToggle(text: "Dismiss after importing", infoType: .info, infoMessage: "When enabled, the Tendies explorer will close automatically after importing a .tendies file into PosterBoard.", isOn: $dismiss_after_import)
+
+                    PlainToggle(text: "Persist after reboot", infoType: .info, infoMessage: "When enabled, MobileGestalt is written in-place on the same inode, which (hopefully) prevents iOS from regenerating the cache on reboot. Disable to use atomic file replacement instead.", isOn: $atomic_write)
                 } header: {
                     Label("Settings", systemImage: "gear")
                 }

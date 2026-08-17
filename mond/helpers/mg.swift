@@ -461,7 +461,7 @@ func mg_load() {
                 try FileManager.default.copyItem(at: mg_url_now, to: mg_url_saved)
             }
 
-            // get original gestalt values
+            // get og gestalt values
             let mg_saved_dict = try NSMutableDictionary(contentsOf: mg_url_saved, error: ())
             let og_cache_extra = mg_saved_dict["CacheExtra"] as? NSMutableDictionary ?? NSMutableDictionary()
             let og_artwork = og_cache_extra["oPeik/9e8lQWMszEjbPzng"] as? NSMutableDictionary ?? NSMutableDictionary()
@@ -549,18 +549,137 @@ func mg_revert() {
     }
 }
 
+private enum mg_write_err: Error {
+    case open(errno: Int32)
+    case truncate(errno: Int32)
+    case write(errno: Int32)
+    case sync(errno: Int32)
+    case rollback(errno: Int32)
+    case verificationFailed
+}
+
+private func read_all(_ fd: Int32) throws -> Data {
+    var res = Data()
+    var buf = [UInt8](repeating: 0, count: 64 * 1024)
+
+    while true {
+        let count = buf.withUnsafeMutableBytes { rawBuffer in
+            read(fd, rawBuffer.baseAddress, rawBuffer.count)
+        }
+
+        if count > 0 {
+            res.append(buf, count: count)
+            continue
+        }
+
+        if count == 0 {
+            return res
+        }
+
+        if errno == EINTR {
+            continue
+        }
+
+        throw mg_write_err.verificationFailed
+    }
+}
+
+private func write_all(_ fd: Int32, _ data: Data) throws {
+    guard !data.isEmpty else { return }
+
+    try data.withUnsafeBytes { rawBuffer in
+        guard let base = rawBuffer.baseAddress else {
+            throw mg_write_err.write(errno: EFAULT)
+        }
+
+        var offset = 0
+
+        while offset < data.count {
+            let res = write(
+                fd,
+                base.advanced(by: offset),
+                data.count - offset
+            )
+
+            if res > 0 {
+                offset += res
+                continue
+            }
+
+            if res < 0 && errno == EINTR {
+                continue
+            }
+
+            throw mg_write_err.write(errno: errno)
+        }
+    }
+}
+
+func mg_write(_ data: Data, to path: String) throws {
+    let og = try Data(contentsOf: URL(fileURLWithPath: path))
+
+    let fd = path.withCString {
+        open($0, O_RDWR | O_CLOEXEC | O_NOFOLLOW)
+    }
+
+    guard fd >= 0 else {
+        throw mg_write_err.open(errno: errno)
+    }
+
+    defer {
+        close(fd)
+    }
+
+    do {
+        guard ftruncate(fd, 0) == 0 else {
+            throw mg_write_err.truncate(errno: errno)
+        }
+
+        try write_all(fd, data)
+
+        guard fsync(fd) == 0 else {
+            throw mg_write_err.sync(errno: errno)
+        }
+
+        guard lseek(fd, 0, SEEK_SET) >= 0 else {
+            throw mg_write_err.verificationFailed
+        }
+
+        let verify = try read_all(fd)
+
+        guard verify == data else {
+            throw mg_write_err.verificationFailed
+        }
+    } catch {
+        if ftruncate(fd, 0) == 0,
+           lseek(fd, 0, SEEK_SET) >= 0 {
+            _ = try? write_all(fd, og)
+            _ = fsync(fd)
+        }
+
+        throw error
+    }
+}
+
+
 func mg_write(_ data: Data) throws {
-    let target_url = URL(fileURLWithPath: TweakPaths.gestalt)
-    let temp_url = target_url.deletingLastPathComponent()
-        .appendingPathComponent(".\(target_url.lastPathComponent).\(UUID().uuidString).tmp")
-    
-    try data.write(to: temp_url, options: [.withoutOverwriting])
-    defer { try? fm.removeItem(at: temp_url) }
-    
-    if fm.fileExists(atPath: target_url.path) {
-        _ = try fm.replaceItemAt(target_url, withItemAt: temp_url)
+    let path = TweakPaths.gestalt
+
+    if UserDefaults.standard.bool(forKey: "atomic_write") {
+        try mg_write(data, to: path)
     } else {
-        try fm.moveItem(at: temp_url, to: target_url)
+        let target_url = URL(fileURLWithPath: path)
+        let temp_url = target_url.deletingLastPathComponent()
+            .appendingPathComponent(".\(target_url.lastPathComponent).\(UUID().uuidString).tmp")
+
+        try data.write(to: temp_url, options: [.withoutOverwriting])
+        defer { try? fm.removeItem(at: temp_url) }
+
+        if fm.fileExists(atPath: target_url.path) {
+            _ = try fm.replaceItemAt(target_url, withItemAt: temp_url)
+        } else {
+            try fm.moveItem(at: temp_url, to: target_url)
+        }
     }
 }
 
@@ -594,4 +713,3 @@ enum mg_view_err: Error, LocalizedError {
         }
     }
 }
-
