@@ -17,6 +17,7 @@ struct SettingsView: View {
     @AppStorage("token") private var token: String = ""
     @AppStorage("dismiss_after_import") private var dismiss_after_import = false
     @AppStorage("atomic_write") private var atomic_write = true
+    @AppStorage("ignore_failure") private var ignore_failure = false
     
     @State private var show_confirm: Bool = false
     
@@ -87,17 +88,7 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    HStack {
-                        TextField("Sandbox Extension Token.", text: $token)
-                        
-                        Spacer()
-                        
-                        Button {
-                            UIPasteboard.general.string = token
-                        } label: {
-                            Image(systemName: "document.on.document")
-                        }
-                    }
+                    TextField("Sandbox Extension Token.", text: $token)
                     .contextMenu {
                         Text("Class: \(token.split(separator: ";").first { $0.contains("com.apple") }.map(String.init) ?? "N/A")")
                         Text("Path: \(token.split(separator: ";").last.map(String.init) ?? "N/A")")
@@ -105,7 +96,7 @@ struct SettingsView: View {
                         Button {
                             UIPasteboard.general.string = token
                         } label: {
-                            Label("Copy token", systemImage: "doc.on.doc")
+                            Label("Copy Token", systemImage: "doc.on.doc")
                         }
                     }
                     .lineLimit(1)
@@ -145,6 +136,8 @@ struct SettingsView: View {
                     PlainToggle(text: "Dismiss after importing", infoType: .info, infoMessage: "When enabled, the Tendies explorer will close automatically after importing a .tendies file into PosterBoard.", isOn: $dismiss_after_import)
 
                     PlainToggle(text: "Persist after reboot", infoType: .info, infoMessage: "When enabled, MobileGestalt is written in-place on the same inode, which (hopefully) prevents iOS from regenerating the cache on reboot. Disable to use atomic file replacement instead.", isOn: $atomic_write)
+                    
+                    PlainToggle(text: "Ignore exploit failure", infoType: .info, infoMessage: "When enabled, All Tweaks will be accessible even if the exploit failed.", isOn: $ignore_failure)
                 } header: {
                     Label("Settings", systemImage: "gear")
                 }
