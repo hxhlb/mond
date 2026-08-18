@@ -171,13 +171,13 @@ let all_tweaks: [mg_tweak] = [
         info_msg: "This tweak may be broken or have no effect on some iOS versions or devices.",
         r: { dict in
             guard let cache_extra = dict["CacheExtra"] as? NSMutableDictionary else { return false }
-            return cache_extra[region_code_key] as? String == "US" &&
+            return cache_extra[region_code_key] as? String == "LL" &&
                    cache_extra[region_info_key] as? String == "LL/A"
         },
         w_on: { dict in
             guard let cache_extra = dict["CacheExtra"] as? NSMutableDictionary else { return }
             Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws (e.g. disabling the camera shutter sound). We will NOT be held responsible for enabling any illegal activites!")
-            cache_extra[region_code_key] = "US"
+            cache_extra[region_code_key] = "LL"
             cache_extra[region_info_key] = "LL/A"
         },
         w_off: { dict in
