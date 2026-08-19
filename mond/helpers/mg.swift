@@ -140,6 +140,9 @@ extension mg_tweak {
     }
 }
 
+private let region_code_key = "h63QSdBCiT/z0WU6rdQv6Q"
+private let region_info_key = "yK+xavymRGZ3xWc1tb8XDg"
+
 let all_tweaks: [mg_tweak] = [
     mg_tweak(title: "Enable Dynamic Island Capability", minv: 19.0, key: "YlEtTtHlNesRBMal1CqRaA", value: 1, info_t: .info, info_msg: "An alternate way to enable the Dynamic Island, as used by Nugget."),
     mg_tweak(title: "Always-On Display", minv: 18.0, keys: ["2OOJf1VhaM7NxfRok3HbWQ", "j8/Omm6s1lsmTDFsXjsBfA"], value: 1, info_t: .warning, info_msg: "Can increase screen burn-in risk on devices that don't officially support it."),
@@ -168,19 +171,19 @@ let all_tweaks: [mg_tweak] = [
         info_msg: "This tweak may be broken or have no effect on some iOS versions or devices.",
         r: { dict in
             guard let cache_extra = dict["CacheExtra"] as? NSMutableDictionary else { return false }
-            return cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] as? String == "US" &&
-                   cache_extra["zHeENZu+wbg7PUprwNwBWg"] as? String == "LL/A"
+            return cache_extra[region_code_key] as? String == "LL" &&
+                   cache_extra[region_info_key] as? String == "LL/A"
         },
         w_on: { dict in
             guard let cache_extra = dict["CacheExtra"] as? NSMutableDictionary else { return }
             Alertinator.shared.alert(title: "Warning!", body: "Please do not use this feature to bypass region restrictions that would equate to breaking regional laws (e.g. disabling the camera shutter sound). We will NOT be held responsible for enabling any illegal activites!")
-            cache_extra["h63QSdBCiT/z0WU6rdQv6Q"] = "US"
-            cache_extra["zHeENZu+wbg7PUprNwBWg"] = "LL/A"
+            cache_extra[region_code_key] = "LL"
+            cache_extra[region_info_key] = "LL/A"
         },
         w_off: { dict in
             guard let cache_extra = dict["CacheExtra"] as? NSMutableDictionary else { return }
-            cache_extra.removeObject(forKey: "h63QSdBCiT/z0WU6rdQv6Q")
-            cache_extra.removeObject(forKey: "zHeENZu+wbg7PUprNwBWg")
+            cache_extra.removeObject(forKey: region_code_key)
+            cache_extra.removeObject(forKey: region_info_key)
         }
     ),
     
